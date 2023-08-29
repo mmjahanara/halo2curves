@@ -3,7 +3,7 @@
 
 use core::fmt;
 use core::ops::{Add, Mul, Neg, Sub};
-use ff::{Field, PrimeField, WithSmallOrderMulGroup};
+use ff::{Field, PrimeField, WithSmallOrderMulGroup, FromUniformBytes};
 use rand_core::RngCore;
 use std::convert::{TryFrom, TryInto};
 use std::io::Write;
@@ -26,6 +26,28 @@ use crate::{
 #[cfg_attr(feature = "derive_serde", derive(Serialize, Deserialize))]
 pub struct Fp(pub(crate) [u64; 6]);
 
+impl FromUniformBytes<64> for Fp {
+    /// Converts a 512-bit little endian integer into
+    /// an `Fp` by reducing by the modulus.
+    fn from_uniform_bytes(bytes: &[u8; 64]) -> Self {
+        Self::from_u768([
+            u64::from_le_bytes(bytes[0..8].try_into().unwrap()),
+            u64::from_le_bytes(bytes[8..16].try_into().unwrap()),
+            u64::from_le_bytes(bytes[16..24].try_into().unwrap()),
+            u64::from_le_bytes(bytes[24..32].try_into().unwrap()),
+            u64::from_le_bytes(bytes[32..40].try_into().unwrap()),
+            u64::from_le_bytes(bytes[40..48].try_into().unwrap()),
+            u64::from_le_bytes(bytes[48..56].try_into().unwrap()),
+            u64::from_le_bytes(bytes[56..64].try_into().unwrap()),
+            u64::from_le_bytes(bytes[64..72].try_into().unwrap()),
+            u64::from_le_bytes(bytes[72..80].try_into().unwrap()),
+            u64::from_le_bytes(bytes[80..88].try_into().unwrap()),
+            u64::from_le_bytes(bytes[88..96].try_into().unwrap()),
+        ])
+    }
+}
+
+
 impl Ord for Fp {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         let left = self.to_repr();
@@ -46,6 +68,7 @@ impl PartialOrd for Fp {
         Some(self.cmp(other))
     }
 }
+
 
 // Wrapper needed, because we don't have Default implemented for [0u8; 48]
 #[derive(Copy, Clone)]
